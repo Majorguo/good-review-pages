@@ -24,23 +24,23 @@
 
   /* 管理操作 */
   #adminDiv { 
-    max-width: 600px; 
-    margin: 0 auto; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 10px; 
-  }
+  width: 100%;
+  margin: 0 auto; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+}
 
   /* 文本框自适应宽度，高度1:1，自动扩展 */
   #newReview { 
-    width: calc(100% - 10px);       /* 满屏减去10px */
-    height: auto;                    /* 高度由JS控制 */
-    padding: 10px; 
-    resize: none; 
-    overflow: hidden; 
-    box-sizing: border-box;
-    font-size: 16px;
-  }
+  width: calc(100vw - 10px);   /* 直接按屏幕宽度算 */
+  max-width: calc(100vw - 10px);
+  padding: 10px; 
+  resize: none; 
+  overflow-y: auto;            /* 内容多时滚动 */
+  box-sizing: border-box;
+  font-size: 16px;
+}
 
   /* 添加按钮跟文本框同宽 */
   #addBtn {
@@ -104,8 +104,12 @@ function adjustInitialHeight() {
 adjustInitialHeight();
 window.addEventListener('resize', adjustInitialHeight);
 newReview.addEventListener('input', () => {
-  newReview.style.height = 'auto';
-  newReview.style.height = newReview.scrollHeight + 'px';
+  const baseSize = newReview.offsetWidth;
+  newReview.style.height = baseSize + 'px';
+
+  if (newReview.scrollHeight > baseSize) {
+    newReview.style.height = newReview.scrollHeight + 'px';
+  }
 });
 
 // 页面加载时检查 localStorage 登录状态
