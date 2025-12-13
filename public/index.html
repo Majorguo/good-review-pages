@@ -1,27 +1,73 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head><meta charset="UTF-8"><title>好评复制</title></head>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>好评展示</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .review { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+    button { margin-left: 5px; }
+  </style>
+</head>
 <body>
-<h2 id="content">加载中...</h2>
-<button onclick="copy()">复制</button>
-<button onclick="del()">删除</button>
+<h1>好评展示</h1>
+<div id="reviews"></div>
+
 <script>
-async function load(){
-  const r = await fetch('/api/next');
-  const j = await r.json();
-  document.getElementById('content').innerText = j.content || '暂无好评';
+async function loadReviews() {
+  const container = document.getElementById('reviews');
+  container.innerHTML = '加载中...';
+  try {
+    const res = await fetch('/api/list');
+    const data = await res.json();
+    if (!data.length) {
+      container.innerHTML = '<p>暂无好评</p>';
+      return;
+    }
+    container.innerHTML = '';
+    data.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'review';
+      div.innerHTML = `
+        <span>${item.content}</span>
+        <button onclick="copyText('${encodeURIComponent(item.content)}')">复制</button>
+        <button onclick="deleteReview('${item.id}')">删除</button>
+      `;
+      container.appendChild(div);
+    });
+  } catch(e) {
+    container.innerHTML = '<p>获取失败: ' + e.message + '</p>';
+  }
 }
-async function copy(){
-  await navigator.clipboard.writeText(document.getElementById('content').innerText);
-  alert('已复制');
+
+function copyText(text) {
+  navigator.clipboard.writeText(decodeURIComponent(text))
+    .then(() => alert('已复制'))
+    .catch(() => alert('复制失败'));
 }
-async function del(){
-  const token = prompt('请输入管理员密码');
-  if(!token) return;
-  await fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
-  load();
+
+async function deleteReview(id) {
+  const pwd = prompt('请输入管理员密码删除此好评');
+  if (!pwd) return;
+  try {
+    const res = await fetch('/api/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, token: pwd })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert('删除成功');
+      loadReviews();
+    } else {
+      alert('删除失败: ' + (data.error || data.message));
+    }
+  } catch(e) {
+    alert('删除失败: ' + e.message);
+  }
 }
-load();
+
+loadReviews();
 </script>
 </body>
 </html>
