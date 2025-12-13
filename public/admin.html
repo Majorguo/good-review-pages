@@ -5,22 +5,24 @@
   <title>好评后台管理</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 10px; }
+    body { font-family: sans-serif; margin: 0; padding: 10px; background: #f9f9f9; }
+    h1 { text-align: center; }
     #loginDiv, #adminDiv { margin-bottom: 20px; }
     input, textarea, button { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
     #adminDiv { display: none; }
-    #addWindow { width: 90%; max-width: 400px; margin-bottom: 20px; }
+    #addWindow { width: 90%; max-width: 400px; margin: 0 auto 20px; }
     #newReview {
       width: 100%;
-      aspect-ratio: 16/9;       /* 文本框保持16:9 */
-      min-height: 100px;        /* 最小高度 */
-      resize: vertical;         /* 内容多时可拉伸高度 */
+      aspect-ratio: 16/9;       /* 文本框16:9 */
+      min-height: 100px;
+      resize: vertical;         /* 可拉伸 */
       padding: 8px;
       box-sizing: border-box;
       font-size: 16px;
     }
     #addBtn { margin-top: 5px; }
-    #reviewList { width: 100%; }
+    #feedback { margin-top: 5px; font-weight: bold; }
+    #reviewList { width: 90%; max-width: 600px; margin: 0 auto; }
     .review-item {
       border-bottom: 1px solid #ddd;
       padding: 5px 0;
@@ -28,19 +30,26 @@
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
+      background: #fff;
+      margin-bottom: 5px;
+      border-radius: 4px;
+      padding: 10px;
     }
     .review-text { flex: 1; min-width: 60%; word-break: break-word; }
     .review-buttons { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+    .review-buttons button { padding: 5px 10px; font-size: 14px; }
   </style>
 </head>
 <body>
 <h1>好评后台管理</h1>
 
+<!-- 登录区域 -->
 <div id="loginDiv">
   <input type="password" id="passwordInput" placeholder="请输入管理员密码">
   <button id="loginBtn">登录</button>
 </div>
 
+<!-- 后台管理 -->
 <div id="adminDiv">
   <div id="addWindow">
     <textarea id="newReview" placeholder="输入新好评"></textarea>
@@ -53,15 +62,15 @@
 <script>
 let ADMIN_TOKEN = null;
 
-// 登录验证
+// 登录逻辑
 document.getElementById('loginBtn').onclick = () => {
   const pwd = document.getElementById('passwordInput').value.trim();
   if (!pwd) return alert('请输入密码');
 
-  fetch('/api/add', {
+  fetch('/api/login', {
     method: 'POST',
     headers: { 'Content-Type':'application/json' },
-    body: JSON.stringify({ content: '__test__', token: pwd })
+    body: JSON.stringify({ token: pwd })
   })
   .then(res => res.json())
   .then(data => {
@@ -73,7 +82,8 @@ document.getElementById('loginBtn').onclick = () => {
     } else {
       alert('密码错误');
     }
-  }).catch(err => alert('验证失败: '+err.message));
+  })
+  .catch(err => alert('验证失败: '+err.message));
 };
 
 // 添加好评
@@ -110,4 +120,63 @@ async function loadAdminReviews() {
   container.innerHTML = '加载中...';
   try {
     const res = await fetch('/api/list');
-    const data = aw
+    const data = await res.json();
+    if (!data.length) {
+      container.innerHTML = '<p>暂无好评</p>';
+      return;
+    }
+    container.innerHTML = '';
+    data.sort((a,b)=>b.id-a.id).forEach(item => {
+      if(item.deleted) return; // 已删除的不显示
+      const div = document.createElement('div');
+      div.className = 'review-item';
+      div.innerHTML = `
+        <div class="review-text">${item.content}</div>
+        <div class="review-buttons">
+          <button onclick="adminDelete('${item.id}')">删除</button>
+          <button onclick="adminEdit('${item.id}','${encodeURIComponent(item.content)}')">修改</button>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  } catch(e) {
+    container.innerHTML = '加载失败: '+ e.message;
+  }
+}
+
+// 删除
+async function adminDelete(id) {
+  try {
+    const res = await fetch('/api/delete', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ id })
+    });
+    const data = await res.json();
+    if (res.ok) loadAdminReviews();
+    else alert('删除失败: '+(data.error||data.message));
+  } catch(e) {
+    alert('删除失败: '+ e.message);
+  }
+}
+
+// 修改
+async function adminEdit(id, content) {
+  const newContent = decodeURIComponent(prompt('修改内容', content));
+  if (!newContent) return;
+  try {
+    const res = await fetch('/api/edit', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ id, content: newContent, token: ADMIN_TOKEN })
+    });
+    const data = await res.json();
+    if (res.ok) loadAdminReviews();
+    else alert('修改失败: '+(data.error||data.message));
+  } catch(e) {
+    alert('修改失败: '+ e.message);
+  }
+}
+</script>
+</body>
+</html>
