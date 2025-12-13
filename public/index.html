@@ -11,19 +11,22 @@
 </head>
 <body>
 <h1>好评展示</h1>
-<div id="reviews"></div>
+<div id="reviews">加载中...</div>
 
 <script>
 async function loadReviews() {
   const container = document.getElementById('reviews');
   container.innerHTML = '加载中...';
+
   try {
     const res = await fetch('/api/list');
     const data = await res.json();
+
     if (!data.length) {
       container.innerHTML = '<p>暂无好评</p>';
       return;
     }
+
     container.innerHTML = '';
     data.forEach(item => {
       const div = document.createElement('div');
@@ -35,7 +38,7 @@ async function loadReviews() {
       `;
       container.appendChild(div);
     });
-  } catch(e) {
+  } catch (e) {
     container.innerHTML = '<p>获取失败: ' + e.message + '</p>';
   }
 }
@@ -47,18 +50,17 @@ function copyText(text) {
 }
 
 async function deleteReview(id) {
-  const pwd = prompt('请输入管理员密码删除此好评');
-  if (!pwd) return;
   try {
     const res = await fetch('/api/delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, token: pwd })
+      body: JSON.stringify({ id }) // 不再传密码
     });
     const data = await res.json();
+
     if (res.ok) {
       alert('删除成功');
-      loadReviews();
+      loadReviews(); // 刷新列表
     } else {
       alert('删除失败: ' + (data.error || data.message));
     }
@@ -67,6 +69,7 @@ async function deleteReview(id) {
   }
 }
 
+// 页面加载时获取好评
 loadReviews();
 </script>
 </body>
