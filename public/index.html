@@ -3,10 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <title>好评展示</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .review { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-    button { margin-left: 5px; }
+    body { font-family: sans-serif; margin: 0; padding: 10px; }
+    #reviews { display: flex; flex-direction: column; gap: 10px; }
+    .review { 
+      border: 1px solid #ddd; padding: 10px; border-radius: 5px; 
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap;
+    }
+    .review-text { flex: 1; min-width: 60%; word-break: break-word; }
+    .review-buttons { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+    button { padding: 5px 10px; }
   </style>
 </head>
 <body>
@@ -14,13 +22,17 @@
 <div id="reviews">加载中...</div>
 
 <script>
+const MAX_DISPLAY = 5;
+
 async function loadReviews() {
   const container = document.getElementById('reviews');
   container.innerHTML = '加载中...';
-
   try {
     const res = await fetch('/api/list');
-    const data = await res.json();
+    let data = await res.json();
+
+    // 只取前 5 条未删除内容
+    data = data.filter(item => !item.deleted).sort((a,b) => b.id - a.id).slice(0, MAX_DISPLAY);
 
     if (!data.length) {
       container.innerHTML = '<p>暂无好评</p>';
@@ -32,13 +44,15 @@ async function loadReviews() {
       const div = document.createElement('div');
       div.className = 'review';
       div.innerHTML = `
-        <span>${item.content}</span>
-        <button onclick="copyText('${encodeURIComponent(item.content)}')">复制</button>
-        <button onclick="deleteReview('${item.id}')">删除</button>
+        <div class="review-text">${item.content}</div>
+        <div class="review-buttons">
+          <button onclick="copyText('${encodeURIComponent(item.content)}')">复制</button>
+          <button onclick="deleteReview('${item.id}')">删除</button>
+        </div>
       `;
       container.appendChild(div);
     });
-  } catch (e) {
+  } catch(e) {
     container.innerHTML = '<p>获取失败: ' + e.message + '</p>';
   }
 }
@@ -54,13 +68,11 @@ async function deleteReview(id) {
     const res = await fetch('/api/delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }) // 不再传密码
+      body: JSON.stringify({ id })
     });
     const data = await res.json();
-
     if (res.ok) {
-      alert('删除成功');
-      loadReviews(); // 刷新列表
+      loadReviews(); // 删除后刷新显示前 5 条
     } else {
       alert('删除失败: ' + (data.error || data.message));
     }
