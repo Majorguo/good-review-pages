@@ -11,13 +11,18 @@
   .review-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     background: #fff;
     padding: 10px;
     border-radius: 5px;
     flex-wrap: wrap;
   }
-  .review-text { flex: 1; min-width: 60%; word-break: break-word; }
+  .review-text {
+    flex: 1;
+    min-width: 60%;
+    word-break: break-word;
+    white-space: pre-wrap; /* ✅ 保留回车换行 */
+  }
   .review-buttons { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
   .review-buttons button { padding: 5px 10px; font-size: 14px; }
 </style>
@@ -40,7 +45,7 @@ async function loadReviews() {
       return;
     }
 
-    // 按最早添加顺序排列
+    // 按最早添加顺序排列，只取前5条
     const displayData = data.filter(item => !item.deleted).sort((a,b)=>a.id-b.id).slice(0,5);
 
     container.innerHTML = '';
