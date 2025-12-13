@@ -42,11 +42,10 @@
     font-size: 16px;
   }
 
-  /* 添加按钮放大20% */
+  /* 添加按钮跟文本框同宽 */
   #addBtn {
-    transform: scale(1.2);
-    transform-origin: top left;
-    padding: 10px 20px;
+    width: calc(100% - 10px);       /* 同文本框宽度 */
+    padding: 10px;
     font-size: 16px;
   }
 
@@ -178,11 +177,11 @@ async function loadAdminReviews() {
       return;
     }
 
-    // 按最新添加或修改时间排序（最新在前面）
+    // 按最新修改或添加时间排序（最新在前面）
     const displayData = data.filter(item => !item.deleted).sort((a,b)=>{
-      const timeA = a.updated_at || a.created_at;
-      const timeB = b.updated_at || b.created_at;
-      return new Date(timeB) - new Date(timeA);
+      const timeA = a.updated_at ? new Date(a.updated_at) : new Date(a.created_at);
+      const timeB = b.updated_at ? new Date(b.updated_at) : new Date(b.created_at);
+      return timeB - timeA;  // 最新在前
     });
 
     container.innerHTML = '';
