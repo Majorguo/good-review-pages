@@ -30,12 +30,18 @@
     flex-direction: column; 
     gap: 10px; 
   }
+
+  /* 文本框自适应宽度，高度1:1，自动扩展 */
   #newReview { 
-    width: calc(100% - 5px);  /* 宽度自适应屏幕，减去5px */ 
-    aspect-ratio: 16/9; 
+    width: calc(100% - 10px);       /* 满屏减去10px */
+    height: auto;                    /* 高度由JS控制 */
     padding: 10px; 
-    resize: vertical; 
+    resize: none; 
+    overflow: hidden; 
+    box-sizing: border-box;
+    font-size: 16px;
   }
+
   .review-item { 
     display: flex; 
     justify-content: space-between; 
@@ -83,7 +89,19 @@
 </div>
 
 <script>
-// 页面加载时检查 localStorage
+// 文本框高度自适应函数
+const newReview = document.getElementById('newReview');
+function adjustInitialHeight() {
+  newReview.style.height = newReview.offsetWidth + 'px'; // 高度 = 宽度
+}
+adjustInitialHeight();
+window.addEventListener('resize', adjustInitialHeight);
+newReview.addEventListener('input', () => {
+  newReview.style.height = 'auto';
+  newReview.style.height = newReview.scrollHeight + 'px';
+});
+
+// 页面加载时检查 localStorage 登录状态
 window.addEventListener('DOMContentLoaded', () => {
   const savedToken = localStorage.getItem('ADMIN_TOKEN');
   if(savedToken){
@@ -100,7 +118,7 @@ document.getElementById('loginBtn').onclick = () => {
   if(!pwd) return alert('请输入密码');
 
   window.ADMIN_TOKEN = pwd;
-  localStorage.setItem('ADMIN_TOKEN', pwd); // 保存到 localStorage
+  localStorage.setItem('ADMIN_TOKEN', pwd);
 
   document.getElementById('loginDiv').style.display = 'none';
   document.getElementById('adminDiv').style.display = 'flex';
@@ -109,7 +127,7 @@ document.getElementById('loginBtn').onclick = () => {
 
 // 添加好评
 document.getElementById('addBtn').onclick = async () => {
-  const content = document.getElementById('newReview').value.trim();
+  const content = newReview.value.trim();
   if (!content) return alert('请输入内容');
   const token = window.ADMIN_TOKEN;
   if (!token) return alert('请先登录');
@@ -126,8 +144,9 @@ document.getElementById('addBtn').onclick = async () => {
     if(res.ok){
       feedbackDiv.style.color = 'green';
       feedbackDiv.innerText = result.message;
-      document.getElementById('newReview').value = '';
-      loadAdminReviews(); // 添加后刷新列表
+      newReview.value = '';
+      adjustInitialHeight();
+      loadAdminReviews();
     } else {
       feedbackDiv.style.color = 'red';
       feedbackDiv.innerText = '添加失败: ' + (result.error || result.message);
@@ -151,7 +170,6 @@ async function loadAdminReviews() {
       return;
     }
 
-    // 按最早添加顺序排列
     const displayData = data.filter(item => !item.deleted).sort((a,b)=>a.id-b.id);
 
     container.innerHTML = '';
