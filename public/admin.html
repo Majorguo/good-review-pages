@@ -42,6 +42,14 @@
     font-size: 16px;
   }
 
+  /* 添加按钮放大20% */
+  #addBtn {
+    transform: scale(1.2);
+    transform-origin: top left;
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+
   .review-item { 
     display: flex; 
     justify-content: space-between; 
@@ -170,7 +178,12 @@ async function loadAdminReviews() {
       return;
     }
 
-    const displayData = data.filter(item => !item.deleted).sort((a,b)=>a.id-b.id);
+    // 按最新添加或修改时间排序（最新在前面）
+    const displayData = data.filter(item => !item.deleted).sort((a,b)=>{
+      const timeA = a.updated_at || a.created_at;
+      const timeB = b.updated_at || b.created_at;
+      return new Date(timeB) - new Date(timeA);
+    });
 
     container.innerHTML = '';
     displayData.forEach(item => {
