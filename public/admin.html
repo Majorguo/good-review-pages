@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>后台管理</title></head>
+<body>
+<h2>添加好评</h2>
+<input id="c" placeholder="好评内容">
+<button onclick="add()">添加</button>
+<div id="msg"></div>
+<script>
+async function add(){
+  const content = document.getElementById('c').value;
+  const token = prompt('请输入管理员密码');
+  const r = await fetch('/api/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content,token})});
+  const j = await r.json();
+  document.getElementById('msg').innerText = j.message || j.error;
+}
+</script>
+</body>
+</html>

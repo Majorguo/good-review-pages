@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>好评复制</title></head>
+<body>
+<h2 id="content">加载中...</h2>
+<button onclick="copy()">复制</button>
+<button onclick="del()">删除</button>
+<script>
+async function load(){
+  const r = await fetch('/api/next');
+  const j = await r.json();
+  document.getElementById('content').innerText = j.content || '暂无好评';
+}
+async function copy(){
+  await navigator.clipboard.writeText(document.getElementById('content').innerText);
+  alert('已复制');
+}
+async function del(){
+  const token = prompt('请输入管理员密码');
+  if(!token) return;
+  await fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
+  load();
+}
+load();
+</script>
+</body>
+</html>
