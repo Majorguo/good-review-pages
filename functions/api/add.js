@@ -6,10 +6,13 @@ export async function onRequestPost({ request, env }) {
   }
 
   const id = Date.now().toString();
+  const now = new Date().toISOString();
 
   await env.REVIEWS_KV.put(id, JSON.stringify({
     id,
     content,
+    created_at: now,
+    updated_at: now,
     deleted: false
   }));
 
