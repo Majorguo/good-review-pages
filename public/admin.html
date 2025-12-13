@@ -6,13 +6,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body { font-family: sans-serif; margin: 0; padding: 10px; background: #f0f0f0; }
-  h1 { text-align: center; }
-  #adminDiv { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
-  #newReview { width: 100%; aspect-ratio: 16/9; padding: 10px; resize: vertical; }
-  .review-item { display: flex; justify-content: space-between; align-items: flex-start; background: #fff; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
-  .review-text { flex: 1; min-width: 60%; word-break: break-word; white-space: pre-wrap; }
-  .review-buttons { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
-  .review-buttons button { padding: 5px 10px; font-size: 14px; }
+  h1 { text-align: center; margin-bottom: 20px; }
+
+  /* 登录样式 */
+  #loginDiv {
+    display:flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    height: 100vh;
+  }
+  #loginDiv input, #loginDiv button {
+    width: 200px; 
+    font-size: 18px; 
+  }
+  #loginDiv input { height: 40px; margin-bottom: 10px; }
+  #loginDiv button { height: 50px; }
+
+  /* 管理操作 */
+  #adminDiv { 
+    max-width: 600px; 
+    margin: 0 auto; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+  }
+  #newReview { 
+    width: 100%; 
+    aspect-ratio: 16/9; 
+    padding: 10px; 
+    resize: vertical; 
+  }
+  .review-item { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    background: #fff; 
+    padding: 10px; 
+    border-radius: 5px; 
+    flex-wrap: wrap; 
+  }
+  .review-text { 
+    flex: 1; 
+    min-width: 60%; 
+    word-break: break-word; 
+    white-space: pre-wrap; 
+  }
+  .review-buttons { 
+    display: flex; 
+    gap: 5px; 
+    margin-top: 5px; 
+    flex-wrap: wrap; 
+  }
+  .review-buttons button { 
+    padding: 5px 10px; 
+    font-size: 14px; 
+  }
+  #feedback { margin-top:10px; color: green; }
 </style>
 </head>
 <body>
@@ -29,7 +79,7 @@
 <div id="adminDiv" style="display:none;">
   <textarea id="newReview" placeholder="输入新好评"></textarea>
   <button id="addBtn">添加好评</button>
-  <div id="feedback" style="margin-top:10px;color:green;"></div>
+  <div id="feedback"></div>
   <div id="reviewList"></div>
 </div>
 
@@ -40,7 +90,7 @@ document.getElementById('loginBtn').onclick = () => {
   if(!pwd) return alert('请输入密码');
 
   document.getElementById('loginDiv').style.display = 'none';
-  document.getElementById('adminDiv').style.display = 'block';
+  document.getElementById('adminDiv').style.display = 'flex';
   window.ADMIN_TOKEN = pwd;
   loadAdminReviews();
 };
