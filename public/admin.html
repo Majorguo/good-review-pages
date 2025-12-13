@@ -24,24 +24,46 @@
 </div>
 
 <script>
+let ADMIN_TOKEN = null;
+
+// 登录按钮
 document.getElementById('loginBtn').onclick = () => {
   const pwd = document.getElementById('passwordInput').value.trim();
   if (!pwd) return alert('请输入密码');
-  window.ADMIN_TOKEN = pwd;
-  document.getElementById('loginDiv').style.display = 'none';
-  document.getElementById('adminDiv').style.display = 'block';
+
+  // 临时验证密码是否正确
+  fetch('/api/add', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ content: '__test__', token: pwd })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.message) {
+      // 登录成功
+      ADMIN_TOKEN = pwd;
+      document.getElementById('loginDiv').style.display = 'none';
+      document.getElementById('adminDiv').style.display = 'block';
+    } else {
+      alert('密码错误');
+    }
+  })
+  .catch(err => alert('验证失败: ' + err.message));
 };
 
+// 添加好评按钮
 document.getElementById('addBtn').onclick = async () => {
   const content = document.getElementById('newReview').value.trim();
   if (!content) return alert('请输入内容');
+  if (!ADMIN_TOKEN) return alert('请先登录');
+
   const feedbackDiv = document.getElementById('feedback');
 
   try {
     const res = await fetch('/api/add', {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ content, token: window.ADMIN_TOKEN })
+      body: JSON.stringify({ content, token: ADMIN_TOKEN })
     });
     const data = await res.json();
     if (res.ok) {
@@ -52,9 +74,9 @@ document.getElementById('addBtn').onclick = async () => {
       feedbackDiv.style.color = 'red';
       feedbackDiv.innerText = '添加失败: ' + (data.error || data.message);
     }
-  } catch(e) {
+  } catch(err) {
     feedbackDiv.style.color = 'red';
-    feedbackDiv.innerText = '添加失败: ' + e.message;
+    feedbackDiv.innerText = '添加失败: ' + err.message;
   }
 };
 </script>
