@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>好评展示</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -28,7 +27,7 @@ h1 {
   margin-bottom: 12px;
 }
 
-/* 列表整体：纵向 */
+/* 列表容器：纵向排列 */
 .review-list {
   display: flex;
   flex-direction: column;
@@ -45,7 +44,7 @@ h1 {
   gap: 12px;
 }
 
-/* 内容展示（关键：不用 textarea） */
+/* 内容展示 */
 .review-text {
   font-size: 14px;
   line-height: 1.7;
@@ -54,13 +53,14 @@ h1 {
   word-break: break-word;
 }
 
-/* 按钮 */
+/* 按钮容器 */
 .review-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
+/* 按钮样式 */
 .review-buttons button {
   padding: 6px 16px;
   font-size: 14px;
@@ -75,7 +75,6 @@ h1 {
 }
 </style>
 </head>
-
 <body>
 
 <h1>好评展示</h1>
@@ -104,8 +103,8 @@ async function loadReviews() {
   }
 }
 
-function renderList(id, list) {
-  const container = document.getElementById(id);
+function renderList(containerId, list) {
+  const container = document.getElementById(containerId);
   container.innerHTML = '';
 
   if (!list.length) {
@@ -113,7 +112,7 @@ function renderList(id, list) {
     return;
   }
 
-  list.slice(0, 3).forEach(item => {
+  list.slice(0, 5).forEach(item => {
     const div = document.createElement('div');
     div.className = 'review-item';
 
@@ -125,8 +124,9 @@ function renderList(id, list) {
     btns.className = 'review-buttons';
     btns.innerHTML = `
       <button onclick="copyReview('${encodeURIComponent(item.content)}')">复制</button>
-    `<button onclick="deleteReview('${item.id}')">删除</button>
-      ;
+      <button onclick="deleteReview('${item.id}')">删除</button>
+    `;
+
     div.appendChild(text);
     div.appendChild(btns);
     container.appendChild(div);
@@ -136,7 +136,23 @@ function renderList(id, list) {
 function copyReview(content) {
   navigator.clipboard.writeText(decodeURIComponent(content)).then(() => {
     showToast('已复制');
+  }).catch(() => {
+    showToast('复制失败');
   });
+}
+
+async function deleteReview(id) {
+  try {
+    const res = await fetch('/api/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    if (res.ok) loadReviews();
+    else alert('删除失败');
+  } catch {
+    alert('删除失败');
+  }
 }
 
 function showToast(text) {
@@ -158,7 +174,8 @@ function showToast(text) {
   setTimeout(() => toast.remove(), 1500);
 }
 
-loadReviews();
+// 页面加载
+window.addEventListener('DOMContentLoaded', loadReviews);
 </script>
 
 </body>
