@@ -4,94 +4,197 @@
 <meta charset="UTF-8">
 <title>好评展示</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-  body { font-family: sans-serif; margin: 0; padding: 10px; background: #f9f9f9; }
-  h1 { text-align: center; }
-  #reviews { display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto; }
-  .review-item {
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 10px;
+    background: #f9f9f9;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  #reviews {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .review-item {
     background: #fff;
     padding: 10px;
-    border-radius: 5px;
-    flex-wrap: wrap;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
+
+  /* ✅ 核心：用 textarea 支持长按复制 */
   .review-text {
-    flex: 1;
-    min-width: 60%;
-    word-break: break-word;
-    white-space: pre-wrap; /* ✅ 保留回车换行 */
+    width: 100%;
+    min-height: 70px;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    resize: none;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+
+    /* 允许选择文本 */
+    user-select: text;
+    -webkit-user-select: text;
+
+    /* 避免点击弹键盘 */
+    outline: none;
   }
-  .review-buttons { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
-  .review-buttons button { padding: 5px 10px; font-size: 14px; }
+
+  .review-text:focus {
+    outline: none;
+  }
+
+  .review-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .review-buttons button {
+    padding: 6px 14px;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: #f2f2f2;
+    cursor: pointer;
+  }
+
+  .review-buttons button:active {
+    background: #e0e0e0;
+  }
 </style>
 </head>
 <body>
 
 <h1>好评展示</h1>
+
 <div id="reviews">加载中...</div>
 
 <script>
 async function loadReviews() {
   const container = document.getElementById('reviews');
   container.innerHTML = '加载中...';
+
   try {
     const res = await fetch('/api/list');
     const data = await res.json();
 
-    if (!data.length) {
+    if (!Array.isArray(data) || data.length === 0) {
       container.innerHTML = '<p>暂无好评</p>';
       return;
     }
 
-    // 按最早添加顺序排列，只取前5条
-    const displayData = data.filter(item => !item.deleted).sort((a,b)=>a.id-b.id).slice(0,5);
+    // ✅ 按最早添加顺序，只显示前 5 条
+    const displayData = data
+      .filter(item => !item.deleted)
+      .sort((a, b) => Number(a.id) - Number(b.id))
+      .slice(0, 5);
 
     container.innerHTML = '';
+
     displayData.forEach(item => {
       const div = document.createElement('div');
       div.className = 'review-item';
+
       div.innerHTML = `
-        <div class="review-text">${item.content}</div>
+        <textarea class="review-text" readonly>${item.content}</textarea>
         <div class="review-buttons">
           <button onclick="copyReview('${encodeURIComponent(item.content)}')">复制</button>
           <button onclick="deleteReview('${item.id}')">删除</button>
         </div>
       `;
+
       container.appendChild(div);
     });
-  } catch(e) {
-    container.innerHTML = '加载失败: '+ e.message;
+
+  } catch (e) {
+    container.innerHTML = '加载失败：' + e.message;
   }
 }
 
-// 复制内容
+// ✅ 点击复制（JS）
 function copyReview(content) {
   const text = decodeURIComponent(content);
-  navigator.clipboard.writeText(text).then(() => alert('已复制: ' + text));
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('已复制');
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
 }
 
-// 删除内容
+// 兜底复制方案（兼容老手机）
+function fallbackCopy(text) {
+  const temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  showToast('已复制');
+}
+
+// 删除
 async function deleteReview(id) {
   try {
     const res = await fetch('/api/delete', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })
     });
     const data = await res.json();
-    if(res.ok) {
-      loadReviews(); // 删除后自动刷新列表
+
+    if (res.ok) {
+      loadReviews();
     } else {
-      alert('删除失败: ' + (data.error || data.message));
+      alert('删除失败：' + (data.error || data.message));
     }
-  } catch(e) {
-    alert('删除失败: ' + e.message);
+  } catch (e) {
+    alert('删除失败：' + e.message);
   }
 }
 
-// 页面加载时获取列表
+// 轻提示（替代 alert）
+function showToast(text) {
+  const toast = document.createElement('div');
+  toast.innerText = text;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    z-index: 9999;
+  `;
+  document.body.appendChild(toast);
+
+  setTimeout(() => toast.remove(), 1500);
+}
+
+// 页面加载
 loadReviews();
 </script>
 
