@@ -5,75 +5,94 @@
 <title>后台管理</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { font-family: sans-serif; margin:0; padding:10px; background:#f0f0f0; }
-  h1 { text-align:center; margin-bottom:20px; }
+body { font-family: sans-serif; margin:0; padding:10px; background:#f0f0f0; }
+h1 { text-align:center; margin-bottom:20px; }
 
-  /* 登录样式 */
-  #loginDiv {
-    display:flex; 
-    flex-direction: column; 
-    align-items: center; 
-    margin-top:40px;
-  }
-  #loginDiv input, #loginDiv button {
-    width: 200px; font-size: 18px;
-  }
-  #loginDiv input { height: 40px; margin-bottom:10px; }
-  #loginDiv button { height: 50px; }
+/* 登录样式 */
+#loginDiv {
+  display:flex; 
+  flex-direction: column; 
+  align-items: center; 
+  margin-top:40px;
+}
+#loginDiv input, #loginDiv button {
+  width: 200px; font-size: 18px;
+}
+#loginDiv input { height: 40px; margin-bottom:10px; }
+#loginDiv button { height: 50px; }
 
-  /* 管理操作 */
-  #adminDiv { 
-    width: 100%; 
-    max-width: 600px;
-    margin: 0 auto; 
-    display:flex; 
-    flex-direction: column; 
-    gap: 15px;
-  }
+/* 管理操作 */
+#adminDiv { 
+  width: 100%; 
+  max-width: 600px;
+  margin: 0 auto; 
+  display:flex; 
+  flex-direction: column; 
+  gap: 15px;
+}
 
-  .review-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
+.review-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
 
-  textarea.review-textarea {
-    width: 100%;
-    padding:10px;
-    resize:none;
-    font-size:16px;
-    box-sizing:border-box;
-    overflow-y:auto;
-  }
+textarea.review-textarea {
+  width: 100%;
+  padding:10px;
+  resize:none;
+  font-size:16px;
+  box-sizing:border-box;
+  overflow-y:auto;
+}
 
-  button.add-btn {
-    width: 100%;
-    padding:10px;
-    font-size:16px;
-  }
+button.add-btn {
+  width: 100%;
+  padding:10px;
+  font-size:16px;
+}
 
-  .review-item { 
-    display:flex; 
-    justify-content: space-between; 
-    align-items:flex-start; 
-    background:#fff; 
-    padding:10px; 
-    border-radius:5px; 
-    flex-wrap: wrap; 
-  }
-  .review-content { 
-    flex:1; 
-    word-break:break-word; 
-    white-space: pre-wrap; 
-  }
-  .review-buttons { 
-    display:flex; 
-    gap:5px; 
-    margin-top:5px; 
-    flex-wrap: wrap;
-  }
-  .review-buttons button { padding:5px 10px; font-size:14px; }
-  #feedback { margin-top:10px; color:green; }
+.review-group {
+  background:#eaeaea;
+  padding:10px;
+  border-radius:5px;
+}
+
+.review-group h3 {
+  margin:0 0 5px 0;
+}
+
+.review-list {
+  max-height:200px; /* 固定高度，多条可滚动 */
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.review-item { 
+  display:flex; 
+  justify-content: space-between; 
+  align-items:flex-start; 
+  background:#fff; 
+  padding:5px 10px; 
+  border-radius:5px; 
+  flex-wrap: wrap; 
+}
+.review-content { 
+  flex:1; 
+  word-break:break-word; 
+  white-space: pre-wrap; 
+}
+.review-buttons { 
+  display:flex; 
+  gap:5px; 
+  margin-top:5px; 
+  flex-wrap: wrap;
+}
+.review-buttons button { padding:5px 10px; font-size:14px; }
+
+#feedback { margin-top:10px; color:green; }
 </style>
 </head>
 <body>
@@ -88,32 +107,44 @@
 
 <!-- 管理操作 -->
 <div id="adminDiv" style="display:none;">
+
   <div class="review-input-group">
     <textarea id="newReviewFilm" class="review-textarea" placeholder="输入手机贴膜好评"></textarea>
-    <button class="add-btn" onclick="addReview('phone-film')">添加手机贴膜好评</button>
+    <button class="add-btn" onclick="addReview('膜')">添加手机贴膜好评</button>
   </div>
+
   <div class="review-input-group">
     <textarea id="newReviewBattery" class="review-textarea" placeholder="输入更换电池好评"></textarea>
-    <button class="add-btn" onclick="addReview('battery')">添加更换电池好评</button>
+    <button class="add-btn" onclick="addReview('电池')">添加更换电池好评</button>
   </div>
+
   <div id="feedback"></div>
-  <div id="reviewList"></div>
+
+  <div class="review-group">
+    <h3>手机贴膜好评</h3>
+    <div id="filmList" class="review-list"></div>
+  </div>
+
+  <div class="review-group">
+    <h3>更换电池好评</h3>
+    <div id="batteryList" class="review-list"></div>
+  </div>
+
 </div>
 
 <script>
 const filmTextarea = document.getElementById('newReviewFilm');
 const batteryTextarea = document.getElementById('newReviewBattery');
 
-// 自动调整高度，比例 1:0.5
-function adjustTextareaHeight(textarea) {
+function adjustTextareaHeight(textarea){
   const screenWidth = window.innerWidth;
   let width = textarea.offsetWidth;
-  let height = screenWidth <= 600 ? width * 0.5 : 250; // 手机端 1:0.5, 电脑端固定250px
+  let height = screenWidth <= 600 ? width*0.5 : 250;
   textarea.style.height = height + 'px';
   textarea.addEventListener('input', ()=>{
     textarea.style.height = '';
     const scrollHeight = textarea.scrollHeight;
-    textarea.style.height = Math.max(scrollHeight, height) + 'px';
+    textarea.style.height = Math.max(scrollHeight,height)+'px';
   });
 }
 
@@ -125,13 +156,13 @@ window.addEventListener('resize', ()=>{
 });
 
 // 登录
-document.getElementById('loginBtn').onclick = () => {
+document.getElementById('loginBtn').onclick = ()=>{
   const pwd = document.getElementById('passwordInput').value;
   if(!pwd) return alert('请输入密码');
   window.ADMIN_TOKEN = pwd;
-  localStorage.setItem('ADMIN_TOKEN', pwd);
-  document.getElementById('loginDiv').style.display = 'none';
-  document.getElementById('adminDiv').style.display = 'flex';
+  localStorage.setItem('ADMIN_TOKEN',pwd);
+  document.getElementById('loginDiv').style.display='none';
+  document.getElementById('adminDiv').style.display='flex';
   loadAdminReviews();
 };
 
@@ -140,15 +171,15 @@ window.addEventListener('DOMContentLoaded', ()=>{
   const savedToken = localStorage.getItem('ADMIN_TOKEN');
   if(savedToken){
     window.ADMIN_TOKEN = savedToken;
-    document.getElementById('loginDiv').style.display = 'none';
-    document.getElementById('adminDiv').style.display = 'flex';
+    document.getElementById('loginDiv').style.display='none';
+    document.getElementById('adminDiv').style.display='flex';
     loadAdminReviews();
   }
 });
 
 // 添加好评
 async function addReview(category){
-  const textarea = category === 'phone-film' ? filmTextarea : batteryTextarea;
+  const textarea = category==='膜'?filmTextarea:batteryTextarea;
   const content = textarea.value.trim();
   if(!content) return alert('请输入内容');
   const token = window.ADMIN_TOKEN;
@@ -157,21 +188,21 @@ async function addReview(category){
   const feedbackDiv = document.getElementById('feedback');
 
   try{
-    const res = await fetch('/api/add', {
+    const res = await fetch('/api/add',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({content, category, token})
+      body: JSON.stringify({content,category,token})
     });
     const result = await res.json();
     if(res.ok){
       feedbackDiv.style.color='green';
-      feedbackDiv.innerText = result.message;
+      feedbackDiv.innerText=result.message;
       textarea.value='';
       adjustTextareaHeight(textarea);
       loadAdminReviews();
     }else{
       feedbackDiv.style.color='red';
-      feedbackDiv.innerText='添加失败:'+ (result.error || result.message);
+      feedbackDiv.innerText='添加失败:'+ (result.error||result.message);
     }
   }catch(err){
     feedbackDiv.style.color='red';
@@ -179,72 +210,75 @@ async function addReview(category){
   }
 }
 
-// 加载列表
+// 加载后台列表
 async function loadAdminReviews(){
-  const container = document.getElementById('reviewList');
-  container.innerHTML='加载中...';
   try{
     const res = await fetch('/api/list');
     const data = await res.json();
-    if(!data.length){
-      container.innerHTML='<p>暂无好评</p>';
-      return;
-    }
-    const displayData = data.filter(item=>!item.deleted).sort((a,b)=>{
-      const timeA = a.updated_at ? new Date(a.updated_at) : new Date(a.created_at);
-      const timeB = b.updated_at ? new Date(b.updated_at) : new Date(b.created_at);
-      return timeB - timeA;
-    });
 
-    container.innerHTML='';
-    displayData.forEach(item=>{
-      const div = document.createElement('div');
-      div.className='review-item';
-      div.innerHTML=`
-        <div><strong>[${item.category==='phone-film'?'手机贴膜':'更换电池'}]</strong></div>
-        <div class="review-content">${item.content}</div>
-        <div class="review-buttons">
-          <button onclick="adminDelete('${item.id}')">删除</button>
-          <button onclick="adminEdit('${item.id}','${encodeURIComponent(item.content)}')">修改</button>
-        </div>
-      `;
-      container.appendChild(div);
-    });
+    const filmList = document.getElementById('filmList');
+    const batteryList = document.getElementById('batteryList');
+    filmList.innerHTML='加载中...';
+    batteryList.innerHTML='加载中...';
+
+    const filmData = data['膜']||[];
+    const batteryData = data['电池']||[];
+
+    // 显示每组最新 5 条
+    function renderList(list, container){
+      container.innerHTML='';
+      list.slice(0,5).forEach(item=>{
+        const div = document.createElement('div');
+        div.className='review-item';
+        div.innerHTML=`
+          <div class="review-content">${item.content}</div>
+          <div class="review-buttons">
+            <button onclick="adminDelete('${item.id}')">删除</button>
+            <button onclick="adminEdit('${item.id}','${encodeURIComponent(item.content)}')">修改</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    renderList(filmData, filmList);
+    renderList(batteryData, batteryList);
 
   }catch(e){
-    container.innerHTML='加载失败:'+e.message;
+    document.getElementById('filmList').innerHTML='加载失败:'+ e.message;
+    document.getElementById('batteryList').innerHTML='加载失败:'+ e.message;
   }
 }
 
-// 后台删除
+// 删除
 async function adminDelete(id){
   try{
     const res = await fetch('/api/delete',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({id, token:window.ADMIN_TOKEN})
+      body: JSON.stringify({id,token:window.ADMIN_TOKEN})
     });
     const data = await res.json();
     if(res.ok) loadAdminReviews();
-    else alert('删除失败:'+ (data.error || data.message));
+    else alert('删除失败:'+ (data.error||data.message));
   }catch(e){
     alert('删除失败:'+ e.message);
   }
 }
 
-// 后台修改
-async function adminEdit(id, content){
-  const newContent = decodeURIComponent(prompt('修改内容', decodeURIComponent(content)));
+// 修改
+async function adminEdit(id,content){
+  const newContent = decodeURIComponent(prompt('修改内容',decodeURIComponent(content)));
   if(!newContent) return;
   try{
     const res = await fetch('/api/edit',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({id, content:newContent, token:window.ADMIN_TOKEN})
+      body: JSON.stringify({id,content:newContent,token:window.ADMIN_TOKEN})
     });
     const data = await res.json();
     if(res.ok) loadAdminReviews();
-    else alert('修改失败:'+ (data.error || data.message));
+    else alert('修改失败:'+ (data.error||data.message));
   }catch(e){
     alert('修改失败:'+ e.message);
   }
