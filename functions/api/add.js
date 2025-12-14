@@ -1,5 +1,5 @@
 export async function onRequestPost({ request, env }) {
-  const { content, token, category } = await request.json(); // 新增 category
+  const { content, token, category } = await request.json();
 
   if (token !== env.ADMIN_PASSWORD) {
     return new Response(JSON.stringify({ error: '无权限' }), {
@@ -8,20 +8,22 @@ export async function onRequestPost({ request, env }) {
     });
   }
 
-  if (!content || !category) {
-    return new Response(JSON.stringify({ error: '内容或分类缺失' }), {
+  // 允许的分类
+  const allowedCategories = ['膜', '电池'];
+  if (!content || !category || !allowedCategories.includes(category)) {
+    return new Response(JSON.stringify({ error: '内容或分类缺失，或分类不合法' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
   const ts = Date.now();
-  const id = ts.toString(); // 时间戳做 id（唯一 & 可排序）
+  const id = ts.toString(); 
 
   const record = {
     id,
     content,
-    category,                // 保存分类
+    category,                
     created_at: new Date(ts).toISOString(),
     updated_at: new Date(ts).toISOString(),
     created_at_ts: ts,
