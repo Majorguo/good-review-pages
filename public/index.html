@@ -125,8 +125,8 @@ function renderList(id, list) {
     btns.className = 'review-buttons';
     btns.innerHTML = `
       <button onclick="copyReview('${encodeURIComponent(item.content)}')">复制</button>
-    `;
-
+    `<button onclick="deleteReview('${item.id}')">删除</button>
+      ;
     div.appendChild(text);
     div.appendChild(btns);
     container.appendChild(div);
