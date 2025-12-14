@@ -13,14 +13,14 @@
     background: #f9f9f9;
   }
 
-  h1 {
-    text-align: center;
-    margin-bottom: 15px;
-  }
+  h1 { text-align: center; margin-bottom: 15px; }
 
   .review-section {
     max-width: 600px;
     margin: 0 auto 20px auto;
+    background: #eaeaea;
+    padding: 10px;
+    border-radius: 6px;
   }
 
   .review-section h2 {
@@ -29,6 +29,8 @@
   }
 
   .review-list {
+    max-height: 250px; /* 固定父容器高度 */
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -36,26 +38,25 @@
 
   .review-item {
     background: #fff;
-    padding: 10px;
+    padding: 8px;
     border-radius: 6px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
   .review-text {
     width: 100%;
-    min-height: 50px;
-    padding: 8px;
+    padding: 6px;
     border: none;
     background: transparent;
-    resize: none;
     font-size: 14px;
     line-height: 1.5;
     color: #333;
-    user-select: text;
-    -webkit-user-select: text;
-    outline: none;
+    resize: none;
+    overflow: hidden; /* 内容自适应，不滚动 */
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .review-buttons {
@@ -65,30 +66,27 @@
   }
 
   .review-buttons button {
-    padding: 6px 14px;
+    padding: 5px 12px;
     font-size: 14px;
     border-radius: 4px;
     border: 1px solid #ccc;
     background: #f2f2f2;
     cursor: pointer;
   }
-
-  .review-buttons button:active {
-    background: #e0e0e0;
-  }
+  .review-buttons button:active { background: #e0e0e0; }
 </style>
 </head>
 <body>
 
 <h1>好评展示</h1>
 
-<!-- 手机贴膜好评 -->
+<!-- 手机贴膜 -->
 <div class="review-section" id="section-film">
   <h2>手机贴膜好评</h2>
   <div class="review-list" id="list-film">加载中...</div>
 </div>
 
-<!-- 更换电池好评 -->
+<!-- 更换电池 -->
 <div class="review-section" id="section-battery">
   <h2>更换电池好评</h2>
   <div class="review-list" id="list-battery">加载中...</div>
@@ -107,12 +105,12 @@ async function loadReviews() {
     }
 
     const filmReviews = data
-      .filter(item => !item.deleted && item.category === 'phone-film')
+      .filter(item => !item.deleted && item.category === '膜')
       .sort((a, b) => Number(a.id) - Number(b.id))
       .slice(0, 3);
 
     const batteryReviews = data
-      .filter(item => !item.deleted && item.category === 'battery')
+      .filter(item => !item.deleted && item.category === '电池')
       .sort((a, b) => Number(a.id) - Number(b.id))
       .slice(0, 3);
 
@@ -136,28 +134,35 @@ function renderList(containerId, reviews) {
   reviews.forEach(item => {
     const div = document.createElement('div');
     div.className = 'review-item';
-    div.innerHTML = `
-      <textarea class="review-text" readonly>${item.content}</textarea>
-      <div class="review-buttons">
-        <button onclick="copyReview('${encodeURIComponent(item.content)}')">复制</button>
-        <button onclick="deleteReview('${item.id}')">删除</button>
-      </div>
+    const textarea = document.createElement('textarea');
+    textarea.className = 'review-text';
+    textarea.readOnly = true;
+    textarea.value = item.content;
+
+    // 自动调整高度
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.className = 'review-buttons';
+    buttonsDiv.innerHTML = `
+      <button onclick="copyReview('${encodeURIComponent(item.content)}')">复制</button>
+      <button onclick="deleteReview('${item.id}')">删除</button>
     `;
+
+    div.appendChild(textarea);
+    div.appendChild(buttonsDiv);
     container.appendChild(div);
   });
 }
 
-// 点击复制
 function copyReview(content) {
   const text = decodeURIComponent(content);
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => showToast('已复制')).catch(() => fallbackCopy(text));
-  } else {
-    fallbackCopy(text);
-  }
+    navigator.clipboard.writeText(text).then(()=>showToast('已复制')).catch(()=>fallbackCopy(text));
+  } else fallbackCopy(text);
 }
 
-// 兜底复制
 function fallbackCopy(text) {
   const temp = document.createElement('textarea');
   temp.value = text;
@@ -168,27 +173,25 @@ function fallbackCopy(text) {
   showToast('已复制');
 }
 
-// 删除
 async function deleteReview(id) {
   try {
-    const res = await fetch('/api/delete', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+    const res = await fetch('/api/delete',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({id})
     });
     const data = await res.json();
     if(res.ok) loadReviews();
-    else alert('删除失败：' + (data.error || data.message));
-  } catch(e) {
-    alert('删除失败：' + e.message);
+    else alert('删除失败：'+ (data.error||data.message));
+  } catch(e){
+    alert('删除失败：'+ e.message);
   }
 }
 
-// 轻提示
-function showToast(text) {
+function showToast(text){
   const toast = document.createElement('div');
   toast.innerText = text;
-  toast.style.cssText = `
+  toast.style.cssText=`
     position: fixed;
     bottom: 30px;
     left: 50%;
@@ -201,10 +204,9 @@ function showToast(text) {
     z-index: 9999;
   `;
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 1500);
+  setTimeout(()=>toast.remove(),1500);
 }
 
-// 页面加载
 loadReviews();
 </script>
 
