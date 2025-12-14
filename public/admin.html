@@ -59,17 +59,17 @@ button.add-btn {
   background:#eaeaea;
   padding:10px;
   border-radius:6px;
-}
-
-.review-group h3 {
-  margin:0 0 6px 0;
+  display: flex;
+  flex-direction: column;
+  height: auto;
 }
 
 .review-list {
-  overflow-y:auto;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* 列表项 */
@@ -160,8 +160,9 @@ function adjustTextarea(textarea){
 function adjustListHeight(){
   const width = filmTextarea.offsetWidth;
   if(!width) return;
-  document.querySelectorAll('.review-list').forEach(list=>{
-    list.style.height = width + 'px';
+
+  document.querySelectorAll('.review-group').forEach(group=>{
+    group.style.height = (width + 40) + 'px'; 
   });
 }
 
