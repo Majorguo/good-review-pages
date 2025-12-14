@@ -18,12 +18,20 @@
     margin-bottom: 15px;
   }
 
-  #reviews {
+  .review-section {
+    max-width: 600px;
+    margin: 0 auto 20px auto;
+  }
+
+  .review-section h2 {
+    margin-bottom: 10px;
+    font-size: 18px;
+  }
+
+  .review-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    max-width: 600px;
-    margin: 0 auto;
+    gap: 10px;
   }
 
   .review-item {
@@ -35,10 +43,9 @@
     gap: 8px;
   }
 
-  /* ✅ 核心：用 textarea 支持长按复制 */
   .review-text {
     width: 100%;
-    min-height: 70px;
+    min-height: 50px;
     padding: 8px;
     border: none;
     background: transparent;
@@ -46,16 +53,8 @@
     font-size: 14px;
     line-height: 1.5;
     color: #333;
-
-    /* 允许选择文本 */
     user-select: text;
     -webkit-user-select: text;
-
-    /* 避免点击弹键盘 */
-    outline: none;
-  }
-
-  .review-text:focus {
     outline: none;
   }
 
@@ -83,66 +82,82 @@
 
 <h1>好评展示</h1>
 
-<div id="reviews">加载中...</div>
+<!-- 手机贴膜好评 -->
+<div class="review-section" id="section-film">
+  <h2>手机贴膜好评</h2>
+  <div class="review-list" id="list-film">加载中...</div>
+</div>
+
+<!-- 更换电池好评 -->
+<div class="review-section" id="section-battery">
+  <h2>更换电池好评</h2>
+  <div class="review-list" id="list-battery">加载中...</div>
+</div>
 
 <script>
 async function loadReviews() {
-  const container = document.getElementById('reviews');
-  container.innerHTML = '加载中...';
-
   try {
     const res = await fetch('/api/list');
     const data = await res.json();
 
     if (!Array.isArray(data) || data.length === 0) {
-      container.innerHTML = '<p>暂无好评</p>';
+      document.getElementById('list-film').innerHTML = '<p>暂无好评</p>';
+      document.getElementById('list-battery').innerHTML = '<p>暂无好评</p>';
       return;
     }
 
-    // ✅ 按最早添加顺序，只显示前 5 条
-    const displayData = data
-      .filter(item => !item.deleted)
+    const filmReviews = data
+      .filter(item => !item.deleted && item.category === 'phone-film')
       .sort((a, b) => Number(a.id) - Number(b.id))
-      .slice(0, 5);
+      .slice(0, 3);
 
-    container.innerHTML = '';
+    const batteryReviews = data
+      .filter(item => !item.deleted && item.category === 'battery')
+      .sort((a, b) => Number(a.id) - Number(b.id))
+      .slice(0, 3);
 
-    displayData.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'review-item';
-
-      div.innerHTML = `
-        <textarea class="review-text" readonly>${item.content}</textarea>
-        <div class="review-buttons">
-          <button onclick="copyReview('${encodeURIComponent(item.content)}')">复制</button>
-          <button onclick="deleteReview('${item.id}')">删除</button>
-        </div>
-      `;
-
-      container.appendChild(div);
-    });
-
-  } catch (e) {
-    container.innerHTML = '加载失败：' + e.message;
+    renderList('list-film', filmReviews);
+    renderList('list-battery', batteryReviews);
+  } catch(e) {
+    document.getElementById('list-film').innerHTML = '加载失败：' + e.message;
+    document.getElementById('list-battery').innerHTML = '加载失败：' + e.message;
   }
 }
 
-// ✅ 点击复制（JS）
+function renderList(containerId, reviews) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+
+  if (!reviews.length) {
+    container.innerHTML = '<p>暂无好评</p>';
+    return;
+  }
+
+  reviews.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    div.innerHTML = `
+      <textarea class="review-text" readonly>${item.content}</textarea>
+      <div class="review-buttons">
+        <button onclick="copyReview('${encodeURIComponent(item.content)}')">复制</button>
+        <button onclick="deleteReview('${item.id}')">删除</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// 点击复制
 function copyReview(content) {
   const text = decodeURIComponent(content);
-
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('已复制');
-    }).catch(() => {
-      fallbackCopy(text);
-    });
+    navigator.clipboard.writeText(text).then(() => showToast('已复制')).catch(() => fallbackCopy(text));
   } else {
     fallbackCopy(text);
   }
 }
 
-// 兜底复制方案（兼容老手机）
+// 兜底复制
 function fallbackCopy(text) {
   const temp = document.createElement('textarea');
   temp.value = text;
@@ -158,22 +173,18 @@ async function deleteReview(id) {
   try {
     const res = await fetch('/api/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({id})
     });
     const data = await res.json();
-
-    if (res.ok) {
-      loadReviews();
-    } else {
-      alert('删除失败：' + (data.error || data.message));
-    }
-  } catch (e) {
+    if(res.ok) loadReviews();
+    else alert('删除失败：' + (data.error || data.message));
+  } catch(e) {
     alert('删除失败：' + e.message);
   }
 }
 
-// 轻提示（替代 alert）
+// 轻提示
 function showToast(text) {
   const toast = document.createElement('div');
   toast.innerText = text;
@@ -190,7 +201,6 @@ function showToast(text) {
     z-index: 9999;
   `;
   document.body.appendChild(toast);
-
   setTimeout(() => toast.remove(), 1500);
 }
 
